@@ -1,0 +1,12 @@
+﻿{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "CV Studio",
+            "request": "launch",
+            "mainClass": "com.nhebpanha.cvstudio.App",
+            "projectName": "cv-studio"
+        }
+    ]
+}

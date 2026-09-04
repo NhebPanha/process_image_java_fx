@@ -62,7 +62,7 @@ Each stage of the diagram becomes:
 ```
 cv-studio/
 ├── pom.xml
-├── src/main/java/com/turbotech/cvstudio/
+├── src/main/java/com/nhebpanha/cvstudio/
 │   ├── App.java                        # JavaFX entry point
 │   ├── ui/
 │   │   ├── MainView.java               # BorderPane root
@@ -89,7 +89,7 @@ cv-studio/
 │   │   ├── DecisionRule.java
 │   │   └── PipelineSettings.java       # all tunable params (observable)
 │   └── util/EventLog.java
-├── src/main/resources/com/turbotech/cvstudio/
+├── src/main/resources/com/nhebpanha/cvstudio/
 │   ├── main.fxml
 │   ├── styles.css
 │   └── models/                         # .onnx / .pt files
@@ -103,7 +103,23 @@ cv-studio/
 xml
 
 ```xml
-<properties>    <maven.compiler.release>21</maven.compiler.release>    <javafx.version>21.0.4</javafx.version>    <djl.version>0.30.0</djl.version></properties><dependencies>    <!-- JavaFX -->    <dependency>        <groupId>org.openjfx</groupId>        <artifactId>javafx-controls</artifactId>        <version>${javafx.version}</version>    </dependency>    <dependency>        <groupId>org.openjfx</groupId>        <artifactId>javafx-fxml</artifactId>        <version>${javafx.version}</version>    </dependency>    <dependency>        <groupId>org.openjfx</groupId>        <artifactId>javafx-swing</artifactId>   <!-- SwingFXUtils fallback -->        <version>${javafx.version}</version>    </dependency>    <!-- OpenCV with bundled native libraries -->    <dependency>        <groupId>org.openpnp</groupId>        <artifactId>opencv</artifactId>        <version>4.9.0-0</version>    </dependency>    <!-- Deep learning inference (choose ONE approach) -->    <dependency>        <groupId>ai.djl</groupId>        <artifactId>api</artifactId>        <version>${djl.version}</version>    </dependency>    <dependency>        <groupId>ai.djl.pytorch</groupId>        <artifactId>pytorch-engine</artifactId>        <version>${djl.version}</version>        <scope>runtime</scope>    </dependency>    <dependency>        <groupId>ai.djl.pytorch</groupId>        <artifactId>pytorch-model-zoo</artifactId>        <version>${djl.version}</version>    </dependency></dependencies><build>    <plugins>        <plugin>            <groupId>org.openjfx</groupId>            <artifactId>javafx-maven-plugin</artifactId>            <version>0.0.8</version>            <configuration>                <mainClass>com.turbotech.cvstudio.App</mainClass>            </configuration>        </plugin>    </plugins></build>
+<properties>    <maven.compiler.release>21</maven.compiler.release>    
+<javafx.version>21.0.4</javafx.version>    <djl.version>0.30.0</djl.version></properties><dependencies>  
+  <!-- JavaFX -->    <dependency>     
+     <groupId>org.openjfx</groupId>    
+         <artifactId>javafx-controls</artifactId>    
+             <version>${javafx.version}</version>   
+              </dependency>    <dependency>    
+                  <groupId>org.openjfx</groupId>    
+                      <artifactId>javafx-fxml</artifactId>   
+                           <version>${javafx.version}</version>    </dependency>    <dependency>        <groupId>org.openjfx</groupId>        <artifactId>javafx-swing</artifactId>   <!-- SwingFXUtils fallback -->        <version>${javafx.version}</version>    </dependency>    <!-- OpenCV with bundled native libraries -->    <dependency>        <groupId>org.openpnp</groupId>        <artifactId>opencv</artifactId>        <version>4.9.0-0</version>    </dependency>    <!-- Deep learning inference (choose ONE approach) -->    <dependency>        <groupId>ai.djl</groupId>        <artifactId>api</artifactId>        <version>${djl.version}</version>    </dependency>    <dependency>        <groupId>ai.djl.pytorch</groupId>        <artifactId>pytorch-engine</artifactId>        <version>${djl.version}</version>        <scope>runtime</scope>    </dependency>    <dependency>        <groupId>ai.djl.pytorch</groupId>        <artifactId>pytorch-model-zoo</artifactId>        <version>${djl.version}</version>    </dependency></dependencies><build>    <plugins>        <plugin>            <groupId>org.openjfx</groupId>            
+<artifactId>javafx-maven-plugin</artifactId>           
+ <version>0.0.8</version>          
+   <configuration>            
+       <mainClass>com.nhebpanha.cvstudio.App</mainClass>   
+                </configuration>     
+                   </plugin>  
+                     </plugins></build>
 ```
 
 > **Alternative to DJL:** `com.microsoft.onnxruntime:onnxruntime:1.19.0` if you prefer to ship a `.onnx` model (YOLOv8n exports cleanly to ONNX and keeps the bundle ~50 MB instead of ~400 MB).
@@ -148,7 +164,7 @@ xml
 java
 
 ```java
-package com.turbotech.cvstudio.model;import org.opencv.core.Mat;import java.util.ArrayList;import java.util.List;public class Frame {    private Mat original;         // stage 1 output    private Mat processed;        // stage 2 output    private Mat featureView;      // stage 3 visualization    private FeatureSet features;  // stage 3 data    private final List<Detection> detections = new ArrayList<>();    private String decision = "—";    private long timestampMs = System.currentTimeMillis();    private final List<StageTiming> timings = new ArrayList<>();// getters / setters omitted    public record StageTiming(String stage, long millis) {}}
+package com.nhebpanha.cvstudio.model;import org.opencv.core.Mat;import java.util.ArrayList;import java.util.List;public class Frame {    private Mat original;         // stage 1 output    private Mat processed;        // stage 2 output    private Mat featureView;      // stage 3 visualization    private FeatureSet features;  // stage 3 data    private final List<Detection> detections = new ArrayList<>();    private String decision = "—";    private long timestampMs = System.currentTimeMillis();    private final List<StageTiming> timings = new ArrayList<>();// getters / setters omitted    public record StageTiming(String stage, long millis) {}}
 ```
 
 java
@@ -347,7 +363,7 @@ public class PipelineRunner {    private final List<PipelineStage> stages;    pr
 java
 
 ```java
-public class App extends Application {    private PipelineRunner runner;    private CameraService camera;    private ModelService models;    @Override public void init() {        NativeLoader.load();        models = new ModelService();    }    @Override public void start(Stage stage) {        PipelineSettings settings = new PipelineSettings();        MainView view = new MainView(settings);        runner = new PipelineRunner(            List.of(new AcquisitionStage(),                    new PreprocessStage(),                    new FeatureExtractionStage(),                    new RecognitionStage(models),                    new DecisionStage()),            settings,            view::update);        camera = new CameraService(mat -> runner.submit(new Frame(mat)));        view.bindCamera(camera);        Scene scene = new Scene(view, 1440, 900);        scene.getStylesheets().add(            getClass().getResource("/com/turbotech/cvstudio/styles.css").toExternalForm());        stage.setTitle("CV Studio — Computer Vision Pipeline");        stage.setScene(scene);        stage.setMinWidth(1100);        stage.setMinHeight(720);        stage.show();// Load model off the FX thread        Task<Void> load = new Task<>() {            @Override protected Void call() throws Exception {                models.load(Path.of("models/yolov8n.pt"), 0.35f);                return null;            }        };        load.setOnSucceeded(e -> view.setModelReady(true));        load.setOnFailed(e -> view.showModelError(load.getException()));        new Thread(load, "model-loader").start();    }    @Override public void stop() {        if (camera != null) camera.stop();        if (models != null) models.close();    }    public static void main(String[] args) { launch(args); }}
+public class App extends Application {    private PipelineRunner runner;    private CameraService camera;    private ModelService models;    @Override public void init() {        NativeLoader.load();        models = new ModelService();    }    @Override public void start(Stage stage) {        PipelineSettings settings = new PipelineSettings();        MainView view = new MainView(settings);        runner = new PipelineRunner(            List.of(new AcquisitionStage(),                    new PreprocessStage(),                    new FeatureExtractionStage(),                    new RecognitionStage(models),                    new DecisionStage()),            settings,            view::update);        camera = new CameraService(mat -> runner.submit(new Frame(mat)));        view.bindCamera(camera);        Scene scene = new Scene(view, 1440, 900);        scene.getStylesheets().add(            getClass().getResource("/com/nhebpanha/cvstudio/styles.css").toExternalForm());        stage.setTitle("CV Studio — Computer Vision Pipeline");        stage.setScene(scene);        stage.setMinWidth(1100);        stage.setMinHeight(720);        stage.show();// Load model off the FX thread        Task<Void> load = new Task<>() {            @Override protected Void call() throws Exception {                models.load(Path.of("models/yolov8n.pt"), 0.35f);                return null;            }        };        load.setOnSucceeded(e -> view.setModelReady(true));        load.setOnFailed(e -> view.showModelError(load.getException()));        new Thread(load, "model-loader").start();    }    @Override public void stop() {        if (camera != null) camera.stop();        if (models != null) models.close();    }    public static void main(String[] args) { launch(args); }}
 ```
 
 ---
@@ -367,7 +383,7 @@ mvn clean javafx:run
 bash
 
 ```bash
-mvn clean packagejpackage \  --type msi \  --name "CV Studio" \  --app-version 1.0.0 \  --vendor "TURBOTECH Co., Ltd." \  --input target/dependency \  --main-jar cv-studio-1.0.0.jar \  --main-class com.turbotech.cvstudio.App \  --java-options "-Xmx2g" \  --java-options "--add-modules=javafx.controls,javafx.fxml,javafx.swing" \  --icon src/main/resources/icon.ico \  --win-shortcut --win-menu
+mvn clean packagejpackage \  --type msi \  --name "CV Studio" \  --app-version 1.0.0 \  --vendor "Nheb Panha" \  --input target/dependency \  --main-jar cv-studio-1.0.0.jar \  --main-class com.nhebpanha.cvstudio.App \  --java-options "-Xmx2g" \  --java-options "--add-modules=javafx.controls,javafx.fxml,javafx.swing" \  --icon src/main/resources/icon.ico \  --win-shortcut --win-menu
 ```
 
 Use `--type deb`/`--type rpm` on Linux and `--type dmg` on macOS. Model files go in `--input` alongside the jars, or ship them separately and download on first run to keep the installer small.
