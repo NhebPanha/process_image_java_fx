@@ -1,0 +1,17 @@
+{
+  "version": 1,
+  "skills": {
+    "golang-uber-fx": {
+      "source": "samber/cc-skills-golang",
+      "sourceType": "github",
+      "skillPath": "skills/golang-uber-fx/SKILL.md",
+      "computedHash": "c0ae4d26ce226f31dc97777042f68ab9d2f549c1515b8d066e9b26e84c71563c"
+    },
+    "java": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "java/SKILL.md",
+      "computedHash": "84e3e8086be7cbe830edfc3b77610f3f5c000e58503159e7ef5597e920ff2332"
+    }
+  }
+}
