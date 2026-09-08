@@ -16,7 +16,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.compiler.release>21</maven.compiler.release>
-        <javafx.version>21.0.4</javafx.version>
+        <javafx.version>21.0.8</javafx.version>
         <opencv.version>4.9.0-0</opencv.version>
         <junit.version>5.10.2</junit.version>
     </properties>

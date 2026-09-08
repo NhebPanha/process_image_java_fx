@@ -1,6 +1,13 @@
-﻿{
+{
     "version": "0.2.0",
     "configurations": [
+        {
+            "type": "java",
+            "name": "Launcher",
+            "request": "launch",
+            "mainClass": "com.rupp.trafficvision.Launcher",
+            "projectName": "traffic-vision"
+        },
         {
             "type": "java",
             "name": "CV Studio",
