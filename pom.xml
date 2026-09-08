@@ -4,13 +4,13 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.nhebpanha</groupId>
-    <artifactId>cv-studio</artifactId>
+    <groupId>com.rupp</groupId>
+    <artifactId>traffic-vision</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
-    <name>CV Studio - Nheb Panha</name>
-    <description>Computer Vision Process Desktop Application in JavaFX 21</description>
+    <name>Traffic Light Vehicle Image Processing System</name>
+    <description>Traffic Light Vehicle Image Processing Desktop Application in JavaFX 21</description>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -81,7 +81,7 @@
                 <artifactId>javafx-maven-plugin</artifactId>
                 <version>0.0.8</version>
                 <configuration>
-                    <mainClass>com.nhebpanha.cvstudio.App</mainClass>
+                    <mainClass>com.rupp.trafficvision.MainApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

@@ -1,0 +1,69 @@
+@startuml
+skinparam backgroundColor #0B0F19
+skinparam defaultFontColor #F3F4F6
+skinparam stateBackgroundColor #111827
+skinparam stateBorderColor #3B82F6
+skinparam stateFontColor #F9FAFB
+skinparam arrowColor #06B6D4
+
+title Vehicle Detection & Processing State Machine
+
+[*] --> IDLE : Application Start
+
+state IDLE {
+    IDLE : GUI Responsive
+    IDLE : Live Clock Active
+    IDLE : Camera Stream Optional
+}
+
+IDLE --> IMAGE_LOADED : Import Image / Take Picture / Drop File
+IMAGE_LOADED --> PREVIEWING : Parameter Slider Changed
+PREVIEWING --> IMAGE_LOADED : Preview Updated
+
+IMAGE_LOADED --> WAITING_SYNC : User Clicks [Process Image]
+
+state WAITING_SYNC {
+    WAITING_SYNC : Task Queued in Executor
+    WAITING_SYNC : Waiting for Mutex / Permit
+}
+
+WAITING_SYNC --> PROCESSING : Lock / Permit Acquired
+
+state PROCESSING {
+    state "Stage 1: Load Image" as S1
+    state "Stage 2: Preprocess" as S2
+    state "Stage 3: Grayscale" as S3
+    state "Stage 4: Edge Detection" as S4
+    state "Stage 5: Segmentation" as S5
+    state "Stage 6: Classification" as S6
+    state "Stage 7: Result" as S7
+
+    [*] --> S1
+    S1 --> S2
+    S2 --> S3
+    S3 --> S4
+    S4 --> S5
+    S5 --> S6
+    S6 --> S7
+    S7 --> [*]
+}
+
+PROCESSING --> DETECTED : Success (Vehicle Found)
+PROCESSING --> UNKNOWN : No Vehicle Match
+PROCESSING --> ERROR : Exception / Canceled
+
+DETECTED --> RESULTS_DISPLAYED : Sync Released & Stats Updated
+UNKNOWN --> RESULTS_DISPLAYED : Sync Released & Log Updated
+
+state RESULTS_DISPLAYED {
+    RESULTS_DISPLAYED : Bounding Box Rendered
+    RESULTS_DISPLAYED : Confidence Badge Shown
+    RESULTS_DISPLAYED : Charts & Counters Refreshed
+}
+
+RESULTS_DISPLAYED --> IMAGE_LOADED : New Image Imported
+RESULTS_DISPLAYED --> IDLE : User Clicks Reset
+
+ERROR --> IDLE : User Acknowledges Alert
+
+@enduml

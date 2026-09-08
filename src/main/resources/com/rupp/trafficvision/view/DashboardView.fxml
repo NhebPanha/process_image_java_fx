@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.chart.LineChart?>
+<?import javafx.scene.chart.NumberAxis?>
+<?import javafx.scene.chart.PieChart?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.ImageView?>
+<?import javafx.scene.layout.*?>
+
+<BorderPane xmlns="http://javafx.com/javafx/21"
+            xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.rupp.trafficvision.controller.DashboardController"
+            prefWidth="1400" prefHeight="900"
+            stylesheets="@../css/dashboard.css">
+
+    <!-- ========================================================================= -->
+    <!-- TOP NAVIGATION BAR                                                        -->
+    <!-- ========================================================================= -->
+    <top>
+        <HBox alignment="CENTER_LEFT" spacing="20" styleClass="top-nav-bar">
+            <!-- Brand & Subtitle -->
+            <VBox spacing="2">
+                <HBox alignment="CENTER_LEFT" spacing="8">
+                    <Label text="🚦" style="-fx-font-size: 22px;"/>
+                    <Label text="Traffic Vision" styleClass="brand-title"/>
+                    <Label text="v1.0" style="-fx-font-size: 11px; -fx-text-fill: #6B7280; -fx-padding: 4 0 0 0;"/>
+                </HBox>
+                <Label text="Vehicle Image Processing System • RUPP Academic Edition" styleClass="brand-subtitle"/>
+            </VBox>
+
+            <Region HBox.hgrow="ALWAYS"/>
+
+            <!-- Synchronization Strategy Selector -->
+            <HBox alignment="CENTER" spacing="12" styleClass="card-panel" style="-fx-padding: 6 14 6 14;">
+                <Label text="Sync Strategy:" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF; -fx-font-weight: bold;"/>
+                <RadioButton fx:id="radioLock" text="ReentrantLock" styleClass="radio-button" selected="true">
+                    <toggleGroup>
+                        <ToggleGroup fx:id="syncToggleGroup"/>
+                    </toggleGroup>
+                </RadioButton>
+                <RadioButton fx:id="radioSemaphore" text="Semaphore" styleClass="radio-button" toggleGroup="$syncToggleGroup"/>
+            </HBox>
+
+            <!-- Camera Simulation Control -->
+            <HBox alignment="CENTER" spacing="8" styleClass="card-panel" style="-fx-padding: 6 12 6 12;">
+                <Label text="Camera Stream:" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF;"/>
+                <Button fx:id="btnToggleCamera" text="Start Live Camera" styleClass="button, btn-secondary" onAction="#handleToggleCamera"/>
+            </HBox>
+
+            <!-- Status Indicator -->
+            <Label fx:id="lblSystemStatus" text="● SYSTEM READY" styleClass="status-badge-ready"/>
+
+            <!-- Live Clock -->
+            <Label fx:id="lblLiveClock" text="00:00:00" styleClass="clock-display"/>
+        </HBox>
+    </top>
+
+    <!-- ========================================================================= -->
+    <!-- MAIN WORKSPACE (LEFT CONTROL, CENTER VIEWER, RIGHT RESULTS)                -->
+    <!-- ========================================================================= -->
+    <center>
+        <SplitPane dividerPositions="0.22, 0.70" orientation="HORIZONTAL">
+
+            <!-- ================================================================= -->
+            <!-- 16. LEFT CONTROL PANEL                                            -->
+            <!-- ================================================================= -->
+            <VBox spacing="14" style="-fx-background-color: #0B0F19; -fx-padding: 14;">
+
+                <!-- Image Acquisition Section -->
+                <VBox spacing="10" styleClass="card-panel" style="-fx-padding: 14;">
+                    <Label text="IMAGE ACQUISITION" styleClass="card-title"/>
+
+                    <HBox spacing="8">
+                        <Button fx:id="btnTakePicture" text="📷 Take Picture" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                styleClass="button, btn-primary" onAction="#handleTakePicture"/>
+                        <Button fx:id="btnImportImage" text="🖼 Import" HBox.hgrow="ALWAYS" maxWidth="Infinity"
+                                styleClass="button, btn-secondary" onAction="#handleImportImage"/>
+                    </HBox>
+
+                    <!-- Quick Sample Selector -->
+                    <VBox spacing="4">
+                        <Label text="Quick Test Samples:" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF;"/>
+                        <ComboBox fx:id="comboSamples" promptText="Select Sample Vehicle..." maxWidth="Infinity" styleClass="combo-box"/>
+                    </VBox>
+
+                    <Button fx:id="btnReset" text="↻ Reset Scene &amp; Stats" maxWidth="Infinity"
+                            styleClass="button, btn-danger" onAction="#handleReset"/>
+                </VBox>
+
+                <!-- Processing Pipeline Settings -->
+                <VBox spacing="10" styleClass="card-panel" style="-fx-padding: 14;" VBox.vgrow="ALWAYS">
+                    <Label text="PROCESSING PIPELINE" styleClass="card-title"/>
+
+                    <VBox spacing="4">
+                        <Label text="Processing Mode:" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF;"/>
+                        <ComboBox fx:id="comboProcessingMode" maxWidth="Infinity" styleClass="combo-box"/>
+                    </VBox>
+
+                    <Separator style="-fx-background-color: #1F2937;"/>
+
+                    <Label text="Active Filters" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF; -fx-font-weight: bold;"/>
+                    <CheckBox fx:id="chkResize" text="Resize Normalization" selected="true" styleClass="check-box"/>
+                    <CheckBox fx:id="chkGrayscale" text="Grayscale Luminance" selected="false" styleClass="check-box"/>
+                    <CheckBox fx:id="chkNoiseReduction" text="Gaussian Noise Blur" selected="true" styleClass="check-box"/>
+                    <CheckBox fx:id="chkEdgeDetection" text="Sobel Edge Detection" selected="false" styleClass="check-box"/>
+                    <CheckBox fx:id="chkContrast" text="Contrast Enhancement" selected="false" styleClass="check-box"/>
+
+                    <Separator style="-fx-background-color: #1F2937;"/>
+
+                    <!-- Parameter Tuners -->
+                    <Label text="Parameters" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF; -fx-font-weight: bold;"/>
+
+                    <VBox spacing="2">
+                        <HBox>
+                            <Label text="Brightness" style="-fx-font-size: 10px; -fx-text-fill: #9CA3AF;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="lblBrightnessVal" text="0" style="-fx-font-size: 10px; -fx-text-fill: #06B6D4;"/>
+                        </HBox>
+                        <Slider fx:id="sliderBrightness" min="-100" max="100" value="0" styleClass="slider"/>
+                    </VBox>
+
+                    <VBox spacing="2">
+                        <HBox>
+                            <Label text="Contrast" style="-fx-font-size: 10px; -fx-text-fill: #9CA3AF;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="lblContrastVal" text="1.0x" style="-fx-font-size: 10px; -fx-text-fill: #06B6D4;"/>
+                        </HBox>
+                        <Slider fx:id="sliderContrast" min="0.2" max="2.5" value="1.0" styleClass="slider"/>
+                    </VBox>
+
+                    <VBox spacing="2">
+                        <HBox>
+                            <Label text="Binary Threshold" style="-fx-font-size: 10px; -fx-text-fill: #9CA3AF;"/>
+                            <Region HBox.hgrow="ALWAYS"/>
+                            <Label fx:id="lblThresholdVal" text="128" style="-fx-font-size: 10px; -fx-text-fill: #06B6D4;"/>
+                        </HBox>
+                        <Slider fx:id="sliderThreshold" min="0" max="255" value="128" styleClass="slider"/>
+                    </VBox>
+
+                    <Region VBox.hgrow="ALWAYS"/>
+
+                    <!-- Action Trigger -->
+                    <Button fx:id="btnProcessImage" text="▶  PROCESS IMAGE" maxWidth="Infinity"
+                            prefHeight="42" styleClass="button, btn-action" onAction="#handleProcessImage"/>
+                </VBox>
+            </VBox>
+
+            <!-- ================================================================= -->
+            <!-- 17 & 18. CENTER PANEL — TRAFFIC CAMERA & COMPARISON VIEWER        -->
+            <!-- ================================================================= -->
+            <VBox spacing="10" style="-fx-background-color: #0B0F19; -fx-padding: 14;">
+
+                <!-- Viewer Toolbar -->
+                <HBox alignment="CENTER_LEFT" spacing="12" styleClass="viewer-header">
+                    <Label text="TRAFFIC CAMERA VIEWPORT" styleClass="card-title-accent"/>
+                    <Region HBox.hgrow="ALWAYS"/>
+
+                    <!-- Viewer Mode Toggle -->
+                    <Label text="View Mode:" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF;"/>
+                    <HBox spacing="4">
+                        <Button fx:id="btnViewProcessed" text="Processed" styleClass="button, btn-primary" onAction="#handleShowProcessedView"/>
+                        <Button fx:id="btnViewOriginal" text="Original" styleClass="button, btn-secondary" onAction="#handleShowOriginalView"/>
+                        <Button fx:id="btnViewSideBySide" text="Side-by-Side" styleClass="button, btn-secondary" onAction="#handleShowSideBySideView"/>
+                    </HBox>
+                </HBox>
+
+                <!-- Central Visual Displays -->
+                <StackPane fx:id="viewportContainer" VBox.vgrow="ALWAYS" styleClass="viewer-container">
+                    <!-- Single Viewport with Overlays -->
+                    <VBox fx:id="singleViewBox" alignment="CENTER">
+                        <StackPane VBox.vgrow="ALWAYS" alignment="CENTER">
+                            <ImageView fx:id="mainImageView" preserveRatio="true" fitWidth="680" fitHeight="440"/>
+                            <!-- Bounding Box and Detection Label Overlay Canvas / Pane -->
+                            <Pane fx:id="overlayPane" mouseTransparent="true" />
+                        </StackPane>
+                    </VBox>
+
+                    <!-- Side-by-Side Split Viewport -->
+                    <HBox fx:id="sideBySideBox" spacing="10" alignment="CENTER" visible="false" managed="false" style="-fx-padding: 8;">
+                        <VBox alignment="CENTER" spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="ORIGINAL IMAGE" style="-fx-font-size: 11px; -fx-text-fill: #9CA3AF; -fx-font-weight: bold;"/>
+                            <ImageView fx:id="splitOriginalView" preserveRatio="true" fitWidth="330" fitHeight="380"/>
+                        </VBox>
+                        <Separator orientation="VERTICAL" style="-fx-background-color: #1F2937;"/>
+                        <VBox alignment="CENTER" spacing="6" HBox.hgrow="ALWAYS">
+                            <Label text="PROCESSED / DETECTED" style="-fx-font-size: 11px; -fx-text-fill: #10B981; -fx-font-weight: bold;"/>
+                            <ImageView fx:id="splitProcessedView" preserveRatio="true" fitWidth="330" fitHeight="380"/>
+                        </VBox>
+                    </HBox>
+
+                    <!-- Embedded Traffic Light Component in Top-Right Corner of Viewer -->
+                    <StackPane alignment="TOP_RIGHT" pickOnBounds="false" style="-fx-padding: 12;">
+                        <VBox fx:id="trafficLightContainer" alignment="CENTER"/>
+                    </StackPane>
+                </StackPane>
+
+                <!-- 23. Processing Progress Banner -->
+                <VBox spacing="4" styleClass="card-panel" style="-fx-padding: 10 14 10 14;">
+                    <HBox alignment="CENTER_LEFT">
+                        <Label fx:id="lblProcessingStage" text="Status: Ready for image processing"
+                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #06B6D4;"/>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label fx:id="lblProcessingPercentage" text="100%"
+                               style="-fx-font-size: 12px; -fx-font-weight: bold; -fx-text-fill: #10B981;"/>
+                    </HBox>
+                    <ProgressBar fx:id="progressBar" progress="1.0" maxWidth="Infinity" styleClass="progress-bar"/>
+                </VBox>
+            </VBox>
+
+            <!-- ================================================================= -->
+            <!-- 19 & 20. RIGHT PANEL — DETECTION RESULT & ANALYTICS               -->
+            <!-- ================================================================= -->
+            <VBox spacing="12" style="-fx-background-color: #0B0F19; -fx-padding: 14;" prefWidth="380">
+
+                <!-- 19. Large Detection Result Card -->
+                <VBox spacing="8" alignment="CENTER" styleClass="detection-result-card" style="-fx-padding: 16;">
+                    <Label text="DETECTION RESULT" styleClass="card-title"/>
+
+                    <Label fx:id="lblVehicleEmoji" text="🚗" style="-fx-font-size: 44px;"/>
+                    <Label fx:id="lblVehicleType" text="CAR" styleClass="vehicle-type-label"/>
+
+                    <Label fx:id="lblConfidence" text="94.5% Confidence" styleClass="confidence-value"/>
+
+                    <HBox alignment="CENTER" spacing="12" style="-fx-padding: 4 0 4 0;">
+                        <Label fx:id="lblProcessingTime" text="Processing: 128 ms" style="-fx-font-size: 12px; -fx-text-fill: #9CA3AF;"/>
+                        <Label fx:id="lblDetectionStatus" text="✓ DETECTED" styleClass="badge-detected"/>
+                    </HBox>
+
+                    <Button fx:id="btnSaveResult" text="💾 Save Result (PNG)" maxWidth="Infinity"
+                            styleClass="button, btn-secondary" onAction="#handleSaveResult"/>
+                </VBox>
+
+                <!-- 20. Vehicle Categories Statistics Grid -->
+                <VBox spacing="6">
+                    <Label text="VEHICLE CLASSIFICATION COUNTS" styleClass="card-title"/>
+                    <GridPane hgap="8" vgap="8">
+                        <columnConstraints>
+                            <ColumnConstraints percentWidth="50"/>
+                            <ColumnConstraints percentWidth="50"/>
+                        </columnConstraints>
+
+                        <!-- Cars Card -->
+                        <VBox GridPane.columnIndex="0" GridPane.rowIndex="0" styleClass="mini-stat-card">
+                            <Label text="🚗 Cars" styleClass="mini-stat-title"/>
+                            <Label fx:id="lblCountCars" text="0" styleClass="mini-stat-count"/>
+                        </VBox>
+
+                        <!-- Motorcycles Card -->
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="0" styleClass="mini-stat-card">
+                            <Label text="🏍 Motorcycles" styleClass="mini-stat-title"/>
+                            <Label fx:id="lblCountMotorcycles" text="0" styleClass="mini-stat-count"/>
+                        </VBox>
+
+                        <!-- Bicycles Card -->
+                        <VBox GridPane.columnIndex="0" GridPane.rowIndex="1" styleClass="mini-stat-card">
+                            <Label text="🚲 Bicycles" styleClass="mini-stat-title"/>
+                            <Label fx:id="lblCountBicycles" text="0" styleClass="mini-stat-count"/>
+                        </VBox>
+
+                        <!-- Tricycles Card -->
+                        <VBox GridPane.columnIndex="1" GridPane.rowIndex="1" styleClass="mini-stat-card">
+                            <Label text="🛺 Tricycles" styleClass="mini-stat-title"/>
+                            <Label fx:id="lblCountTricycles" text="0" styleClass="mini-stat-count"/>
+                        </VBox>
+
+                        <!-- Mopeds Card -->
+                        <VBox GridPane.columnIndex="0" GridPane.rowIndex="2" GridPane.columnSpan="2" styleClass="mini-stat-card">
+                            <HBox alignment="CENTER_LEFT">
+                                <Label text="🛵 Mopeds" styleClass="mini-stat-title"/>
+                                <Region HBox.hgrow="ALWAYS"/>
+                                <Label fx:id="lblCountMopeds" text="0" styleClass="mini-stat-count"/>
+                            </HBox>
+                        </VBox>
+                    </GridPane>
+                </VBox>
+
+                <!-- 21 & 22. Charts TabPane -->
+                <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS" styleClass="card-panel">
+                    <!-- Processing Performance Line Chart -->
+                    <Tab text="Performance (ms)">
+                        <VBox alignment="CENTER" style="-fx-padding: 8;">
+                            <LineChart fx:id="chartPerformance" legendVisible="false" createSymbols="false" prefHeight="180">
+                                <xAxis>
+                                    <NumberAxis label="Image Index" autoRanging="true"/>
+                                </xAxis>
+                                <yAxis>
+                                    <NumberAxis label="Time (ms)" autoRanging="true"/>
+                                </yAxis>
+                            </LineChart>
+                        </VBox>
+                    </Tab>
+
+                    <!-- Vehicle Distribution Pie Chart -->
+                    <Tab text="Distribution">
+                        <VBox alignment="CENTER" style="-fx-padding: 8;">
+                            <PieChart fx:id="chartDistribution" legendVisible="true" prefHeight="180"/>
+                        </VBox>
+                    </Tab>
+                </TabPane>
+            </VBox>
+        </SplitPane>
+    </center>
+
+    <!-- ========================================================================= -->
+    <!-- 24. BOTTOM PANEL — MONITORING TABLE VIEWS                                 -->
+    <!-- ========================================================================= -->
+    <bottom>
+        <VBox style="-fx-background-color: #0B0F19; -fx-padding: 8 14 14 14;" prefHeight="220">
+            <TabPane tabClosingPolicy="UNAVAILABLE" VBox.vgrow="ALWAYS">
+                <!-- Vehicle Detection Processing Monitor -->
+                <Tab text="Vehicle Detection Log">
+                    <TableView fx:id="tableVehicleLog" styleClass="table-view">
+                        <columns>
+                            <TableColumn fx:id="colLogImageId" text="Vehicle ID" prefWidth="120"/>
+                            <TableColumn fx:id="colLogType" text="Vehicle Type" prefWidth="150"/>
+                            <TableColumn fx:id="colLogConfidence" text="Confidence" prefWidth="120"/>
+                            <TableColumn fx:id="colLogProcessingTime" text="Processing Time" prefWidth="140"/>
+                            <TableColumn fx:id="colLogThread" text="Thread" prefWidth="130"/>
+                            <TableColumn fx:id="colLogStatus" text="Status" prefWidth="110"/>
+                            <TableColumn fx:id="colLogTimestamp" text="Timestamp" prefWidth="130"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </Tab>
+
+                <!-- Thread Status & Worker Monitor -->
+                <Tab text="Multithreading &amp; Worker Pool Monitor">
+                    <TableView fx:id="tableWorkerMonitor" styleClass="table-view">
+                        <columns>
+                            <TableColumn fx:id="colWorkerName" text="Thread Name" prefWidth="140"/>
+                            <TableColumn fx:id="colWorkerId" text="Thread ID" prefWidth="100"/>
+                            <TableColumn fx:id="colWorkerStatus" text="State" prefWidth="130"/>
+                            <TableColumn fx:id="colWorkerTask" text="Current Processing Status" prefWidth="280"/>
+                            <TableColumn fx:id="colWorkerLastActivity" text="Last Activity" prefWidth="140"/>
+                            <TableColumn fx:id="colWorkerExecTime" text="Processing Time (ms)" prefWidth="160"/>
+                        </columns>
+                        <columnResizePolicy>
+                            <TableView fx:constant="CONSTRAINED_RESIZE_POLICY"/>
+                        </columnResizePolicy>
+                    </TableView>
+                </Tab>
+            </TabPane>
+        </VBox>
+    </bottom>
+</BorderPane>

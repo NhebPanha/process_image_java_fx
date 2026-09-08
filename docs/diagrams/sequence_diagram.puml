@@ -1,0 +1,70 @@
+@startuml
+skinparam backgroundColor #0B0F19
+skinparam defaultFontColor #F3F4F6
+skinparam sequenceArrowColor #06B6D4
+skinparam participantBackgroundColor #111827
+skinparam participantBorderColor #3B82F6
+skinparam participantFontColor #F9FAFB
+skinparam actorBackgroundColor #1E293B
+skinparam actorBorderColor #10B981
+
+title Vehicle Image Processing Sequence Flow
+
+actor User
+participant "DashboardView (FXML)" as UI
+participant "DashboardController" as Controller
+participant "VehicleDetectionService" as DetectService
+participant "SynchronizationStrategy\n(ReentrantLock / Semaphore)" as Sync
+participant "ImageProcessingTask\n(Worker Thread)" as Task
+participant "ImageProcessingVehicleDetector" as Detector
+participant "StatisticsService" as StatsService
+participant "StatisticsManager" as StatsMgr
+
+User -> UI : Clicks [Process Image]
+UI -> Controller : handleProcessImage()
+Controller -> Controller : buildParameters()
+Controller -> DetectService : submitDetectionTask(image, params, previewHook)
+DetectService -> StatsMgr : recordImageSubmitted()
+DetectService -> Task : new ImageProcessingTask(...)
+DetectService -> DetectService : executorService.submit(task)
+Controller --> UI : Binds progressBar & status labels
+
+activate Task
+Task -> Sync : acquireAccess()
+Sync --> Task : Access granted
+
+Task -> Detector : detect(image, params)
+activate Detector
+
+group 7-Stage Image Processing Pipeline
+    Detector -> Detector : Stage 1: Load Image
+    Detector -> Detector : Stage 2: Preprocess / Color Normalization
+    Detector -> Detector : Stage 3: Grayscale Luminance Conversion
+    Detector -> Task : Preview hook (Grayscale)
+    Task -> UI : Stream intermediate Grayscale preview
+    Detector -> Detector : Stage 4: Gaussian Blur & Sobel Edge Detection
+    Detector -> Task : Preview hook (Sobel Edges)
+    Task -> UI : Stream intermediate Edge preview
+    Detector -> Detector : Stage 5: Foreground Blob & Projection Profiling
+    Detector -> Detector : Stage 6: Geometry & Aspect-Ratio Classification
+    Detector -> Detector : Stage 7: DetectionResult Assembly
+end
+
+Detector --> Task : DetectionResult (e.g., CAR, 94.5%)
+deactivate Detector
+
+Task -> Sync : releaseAccess()
+Sync --> Task : Released
+
+Task --> DetectService : onSucceeded(event)
+deactivate Task
+
+DetectService -> StatsMgr : recordResult(result)
+DetectService -> StatsService : notifyStatisticsChanged()
+StatsService -> Controller : refreshStatisticsUI()
+Controller -> UI : Update Result Card, Mini Cards, Charts
+Controller -> UI : renderBoundingBoxOverlay(result)
+Controller -> UI : Add record to Vehicle Log Table
+Controller --> User : Visual Feedback (Green Bounding Box + Badges)
+
+@enduml

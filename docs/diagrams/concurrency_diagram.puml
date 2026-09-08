@@ -1,0 +1,61 @@
+@startuml
+skinparam backgroundColor #0B0F19
+skinparam defaultFontColor #F3F4F6
+skinparam componentBackgroundColor #111827
+skinparam componentBorderColor #3B82F6
+skinparam componentFontColor #F9FAFB
+skinparam arrowColor #06B6D4
+
+title Multithreading & Concurrency Architecture
+
+[JavaFX Application Thread\n(UI Event Dispatch Thread)] as UIThread
+
+package "Executor Thread Pool (FixedThreadPool, Size = 4)" {
+    [Worker-1 (Daemon)] as W1
+    [Worker-2 (Daemon)] as W2
+    [Worker-3 (Daemon)] as W3
+    [Worker-4 (Daemon)] as W4
+}
+
+package "Scheduled Executors" {
+    [Camera-Sim-Thread\n(Scheduled at 20 FPS)] as CamThread
+    [UI Clock Timeline\n(1-second interval)] as ClockThread
+}
+
+package "Concurrency Guardians" {
+    interface "SynchronizationStrategy" as Strat
+    [ProcessingLock\n(ReentrantLock Fair=true)] as Mutex
+    [ProcessingSemaphore\n(Permits = 2)] as Sem
+    Mutex ..|> Strat
+    Sem ..|> Strat
+}
+
+database "Shared State & Resources" {
+    [StatisticsManager\n(Metrics, Counts, History)] as SharedStats
+    [WorkerRegistry\n(Thread States & Tasks)] as WorkerStats
+}
+
+UIThread --> CamThread : start() / stop()
+CamThread --> UIThread : Platform.runLater(frame)
+
+UIThread --> W1 : submit(ImageProcessingTask)
+UIThread --> W2 : submit(ImageProcessingTask)
+UIThread --> W3 : submit(ImageProcessingTask)
+UIThread --> W4 : submit(ImageProcessingTask)
+
+W1 --> Strat : acquireAccess()
+W2 --> Strat : acquireAccess()
+W3 --> Strat : acquireAccess()
+W4 --> Strat : acquireAccess()
+
+Strat --> SharedStats : Guard critical updates
+W1 --> SharedStats : recordResult()
+W2 --> SharedStats : recordResult()
+
+W1 --> WorkerStats : updateState(PROCESSING/COMPLETED)
+W2 --> WorkerStats : updateState(PROCESSING/COMPLETED)
+
+SharedStats --> UIThread : Platform.runLater(notifyStatisticsChanged)
+WorkerStats --> UIThread : tableWorkerMonitor.refresh()
+
+@enduml

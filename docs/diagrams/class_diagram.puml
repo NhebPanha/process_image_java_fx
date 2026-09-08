@@ -1,0 +1,213 @@
+@startuml
+skinparam backgroundColor #0B0F19
+skinparam defaultFontColor #F3F4F6
+skinparam sequenceArrowColor #06B6D4
+skinparam classBackgroundColor #111827
+skinparam classBorderColor #3B82F6
+skinparam classFontColor #F9FAFB
+skinparam packageBackgroundColor #0E1524
+skinparam packageBorderColor #1F2937
+
+title Traffic Light Vehicle Image Processing System - Class Architecture
+
+package "com.rupp.trafficvision.model" {
+    enum VehicleType {
+        CAR
+        MOTORCYCLE
+        BICYCLE
+        TRICYCLE
+        MOPED
+        UNKNOWN
+        +getDisplayName(): String
+        +getEmoji(): String
+    }
+
+    enum TrafficLightColor {
+        RED
+        YELLOW
+        GREEN
+        +next(): TrafficLightColor
+    }
+
+    enum ThreadStatus {
+        IDLE
+        PROCESSING
+        WAITING
+        COMPLETED
+        ERROR
+        STOPPED
+    }
+
+    class BoundingBox {
+        -x: int
+        -y: int
+        -width: int
+        -height: int
+        +getAspectRatio(): double
+        +getArea(): int
+    }
+
+    class DetectionResult {
+        -imageId: String
+        -vehicleType: VehicleType
+        -confidence: double
+        -processingTime: long
+        -boundingBox: BoundingBox
+        -status: String
+        -details: String
+        +isDetected(): boolean
+    }
+
+    class ProcessingParameters {
+        -mode: Mode
+        -brightness: double
+        -contrast: double
+        -threshold: int
+        -resize: boolean
+        -grayscale: boolean
+        -noiseReduction: boolean
+        -edgeDetection: boolean
+        -contrastEnhancement: boolean
+    }
+}
+
+package "com.rupp.trafficvision.processing" {
+    interface ImageProcessor {
+        +process(input: BufferedImage, params: ProcessingParameters): BufferedImage
+    }
+
+    class GrayscaleProcessor implements ImageProcessor
+    class EdgeDetectionProcessor implements ImageProcessor
+    class BlurProcessor implements ImageProcessor
+    class ThresholdProcessor implements ImageProcessor
+    class ContrastProcessor implements ImageProcessor
+}
+
+package "com.rupp.trafficvision.detection" {
+    interface VehicleDetector {
+        +detect(image: BufferedImage): DetectionResult
+        +detect(image: BufferedImage, params: ProcessingParameters): DetectionResult
+    }
+
+    class ImageProcessingVehicleDetector implements VehicleDetector {
+        -grayscaleProcessor: GrayscaleProcessor
+        -edgeProcessor: EdgeDetectionProcessor
+        +detect(image: BufferedImage, params: ProcessingParameters): DetectionResult
+    }
+}
+
+package "com.rupp.trafficvision.sync" {
+    interface SynchronizationStrategy {
+        +acquireAccess(): void
+        +releaseAccess(): void
+        +executeWithProtection(action: Supplier<T>): T
+        +executeWithProtection(action: Runnable): void
+        +getStrategyName(): String
+        +getStatusDescription(): String
+    }
+
+    package "lock" {
+        class ProcessingLock implements SynchronizationStrategy {
+            -lock: ReentrantLock
+        }
+    }
+
+    package "semaphore" {
+        class ProcessingSemaphore implements SynchronizationStrategy {
+            -semaphore: Semaphore
+            -totalPermits: int
+        }
+    }
+}
+
+package "com.rupp.trafficvision.statistics" {
+    class StatisticsManager {
+        -totalImages: int
+        -processedImages: int
+        -successfulDetections: int
+        -failedDetections: int
+        -synchronizationStrategy: SynchronizationStrategy
+        +recordImageSubmitted(): void
+        +recordResult(result: DetectionResult): void
+        +getAverageProcessingTime(): double
+        +reset(): void
+    }
+}
+
+package "com.rupp.trafficvision.thread" {
+    class ImageProcessingTask {
+        -sourceImage: BufferedImage
+        -parameters: ProcessingParameters
+        -detector: VehicleDetector
+        -synchronizationStrategy: SynchronizationStrategy
+        #call(): DetectionResult
+    }
+
+    class ProcessingWorker {
+        -threadName: StringProperty
+        -threadId: LongProperty
+        -status: ObjectProperty<ThreadStatus>
+        -currentTask: StringProperty
+        +updateState(status, desc, elapsedMs): void
+    }
+}
+
+package "com.rupp.trafficvision.service" {
+    class ImageProcessingService {
+        +process(input: BufferedImage, params: ProcessingParameters): BufferedImage
+        +sharpen(input: BufferedImage): BufferedImage
+    }
+
+    class VehicleDetectionService {
+        -executorService: ExecutorService
+        -workerRegistry: List<ProcessingWorker>
+        -vehicleDetector: VehicleDetector
+        -synchronizationStrategy: SynchronizationStrategy
+        +submitDetectionTask(image, params, previewHook): ImageProcessingTask
+        +shutdown(): void
+    }
+
+    class CameraService {
+        -cameraId: String
+        -cameraScheduler: ScheduledExecutorService
+        +start(listener): void
+        +stop(): void
+        +captureSnapshot(): BufferedImage
+        +renderSyntheticFrame(type, progress, color): BufferedImage
+    }
+
+    class StatisticsService {
+        -statisticsManager: StatisticsManager
+        +notifyStatisticsChanged(): void
+        +reset(): void
+    }
+}
+
+package "com.rupp.trafficvision.controller" {
+    class DashboardController {
+        -statisticsService: StatisticsService
+        -detectionService: VehicleDetectionService
+        -imageProcessingService: ImageProcessingService
+        -cameraService: CameraService
+        -trafficLightComponent: TrafficLightComponent
+        +handleTakePicture(): void
+        +handleImportImage(): void
+        +handleProcessImage(): void
+        +handleReset(): void
+        +handleSaveResult(): void
+        +cleanup(): void
+    }
+}
+
+DashboardController --> VehicleDetectionService
+DashboardController --> ImageProcessingService
+DashboardController --> CameraService
+DashboardController --> StatisticsService
+VehicleDetectionService --> ImageProcessingTask
+VehicleDetectionService --> VehicleDetector
+VehicleDetectionService --> SynchronizationStrategy
+StatisticsManager --> SynchronizationStrategy
+ImageProcessingTask --> VehicleDetector
+ImageProcessingTask --> SynchronizationStrategy
+
+@enduml

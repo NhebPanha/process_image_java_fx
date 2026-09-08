@@ -1,0 +1,76 @@
+@startuml
+skinparam backgroundColor #0B0F19
+skinparam defaultFontColor #F3F4F6
+skinparam activityBackgroundColor #111827
+skinparam activityBorderColor #3B82F6
+skinparam activityFontColor #F9FAFB
+skinparam arrowColor #06B6D4
+skinparam conditionStyle insidediamond
+
+title Image Processing & Vehicle Classification Activity Workflow
+
+start
+
+:User acquires image via Webcam Snapshot, File Import, or Sample Selector;
+:Display original frame in JavaFX Viewport;
+
+if (User alters processing mode or parameter sliders?) then (yes)
+    :Compute real-time single-filter preview (Grayscale/Blur/Edges/Threshold);
+    :Render live preview in ImageView;
+else (no)
+endif
+
+:User clicks [Process Image];
+:Construct ProcessingParameters snapshot;
+:Dispatch ImageProcessingTask to Background Executor Thread Pool;
+
+partition "Worker Thread Critical Section" {
+    if (Selected Strategy == ReentrantLock?) then (yes)
+        :lock.lockInterruptibly();
+    else (Semaphore)
+        :semaphore.acquire();
+    endif
+
+    :Stage 1: Validate & Normalize Image Dimensions;
+    :Stage 2: Adjust Brightness & Contrast Offsets;
+    :Stage 3: Calculate ITU-R BT.601 Grayscale Luminance;
+    :Stage 4: Convolve with 3x3 Sobel Gradient Kernels (Gx & Gy);
+    :Stage 5: Compute Horizontal & Vertical Projection Histograms;
+    :Isolate Roadway Foreground Blob & Vehicle Bounding Box;
+
+    if (Aspect Ratio >= 1.32 or Box Width >= 150 px?) then (yes)
+        :Classify as CAR (🚗);
+    elseif (Box Width >= 105 px and Aspect Ratio in [0.80, 1.32]?) then (yes)
+        :Classify as TRICYCLE (🛺);
+    elseif (Aspect Ratio in [0.72, 1.10] and Edge Density < 0.22?) then (yes)
+        :Classify as BICYCLE (🚲);
+    elseif (Aspect Ratio in [0.72, 1.10] and Box Width > 75 px?) then (yes)
+        :Classify as MOPED (🛵);
+    elseif (Aspect Ratio in [0.40, 0.72]?) then (yes)
+        :Classify as MOTORCYCLE (🏍);
+    else (default)
+        :Mark as UNKNOWN (?);
+    endif
+
+    :Compute Confidence Metric & Processing Duration (ms);
+    :Assemble DetectionResult Object;
+
+    if (Selected Strategy == ReentrantLock?) then (yes)
+        :lock.unlock();
+    else (Semaphore)
+        :semaphore.release();
+    endif
+}
+
+partition "JavaFX Application Thread (Platform.runLater)" {
+    :Update Aggregate Statistics in StatisticsManager;
+    :Refresh Vehicle Counters (Cars, Motorcycles, etc.);
+    :Append Execution Point to Performance LineChart;
+    :Update Vehicle Distribution PieChart;
+    :Prepend Result Row to Vehicle Log TableView;
+    :Draw Glowing Emerald Bounding Box & Label Badge Overlay;
+}
+
+stop
+
+@enduml
